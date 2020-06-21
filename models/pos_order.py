@@ -60,6 +60,7 @@ class PosOrder(models.Model):
             'pos_reference': ui_order['name'],
             'partner_id':   ui_order['partner_id'] or False,
             'date_order':   ui_order['creation_date'],
+            'fiscal_position_id': ui_order['fiscal_position_id'],
             'has_cashback':   ui_order['has_cashback'] or False,
         } 
 

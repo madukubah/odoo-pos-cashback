@@ -79,6 +79,13 @@ class PosSession(models.Model):
             for cashback_statement in session.cashback_statement_ids:
                     session.cashback_journal_id = cashback_statement.journal_id.id
 
+
+    @api.multi
+    def unlink(self):
+        for session in self.filtered(lambda s: s.cashback_statement_ids):
+            session.cashback_statement_ids.unlink()
+        return super(PosSession, self).unlink()
+
     cashback_statement_ids = fields.One2many('pos.cashback.statement', 'pos_session_id', string='Cash Back Statement', readonly=True)
     cashback_journal_id = fields.Many2one('account.journal', compute='_compute_cashback_journal', string='Cash Back Journal', store=True)
     cashback_id = fields.Many2one(

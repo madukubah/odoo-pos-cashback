@@ -20,7 +20,7 @@ models.load_models({
 
 models.load_models({
     model: 'pos.cashback',
-    fields: ['name','journal_id','sequence_id','minimal_amount', 'cashback_pc', 'state'],
+    fields: ['name','journal_id','minimal_amount', 'cashback_pc', 'state'],
     ids:    function(self){ 
         if( self.pos_session.cashback_id )
             return [self.pos_session.cashback_id[0]]; 
@@ -158,7 +158,9 @@ screens.PaymentScreenWidget.include({
         });
 
         this.$('.next').click(function(){
-            self.reset_cashback();
+            if (self.order_is_valid()) {
+                self.reset_cashback();
+            }
             // console.log("next");
         });
     },
@@ -218,6 +220,8 @@ screens.PaymentScreenWidget.include({
         
                 this.$('.js_custom_remove_cashback').addClass('oe_hidden');
                 this.$('.js_custom_add_cashback').removeClass('oe_hidden');
+
+                // this.render_paymentlines();
             }
         }
     },
@@ -280,9 +284,7 @@ screens.OrderWidget.include({
             this.el.querySelector('.summary .total .cashback .value').textContent = this.format_currency(cashback);
             this.el.querySelector('.summary .total .cashback .cashback_name').textContent = this.pos.cashback.name;
         }
-        
     },
-
 });
 
    

@@ -89,6 +89,15 @@ class PosCashbackStatement(models.Model):
                 raise UserError(_('A statement cannot be canceled when its lines are reconciled.'))
         self.state = 'open'
         # self.state = 'confirm'
+
+    @api.multi
+    def unlink(self):
+        for statement in self:
+            if statement.state != 'open':
+                raise UserError(_('In order to delete a bank statement, you must first cancel it to delete related journal items.'))
+            # Explicitly unlink bank statement lines so it will check that the related journal entries have been deleted first
+            statement.line_ids.unlink()
+        return super(PosCashbackStatement, self).unlink()
     
     @api.one
     @api.depends('line_ids.journal_entry_ids')
@@ -141,6 +150,15 @@ class PosCashbackStatementLine(models.Model):
         default=False, copy=False,
         help="Technical field holding the number given to the journal entry, automatically set when the statement line is reconciled then stored to set the same number again if the line is cancelled, set to draft and re-processed again.")
     bank_account_id = fields.Many2one('res.partner.bank', string='Bank Account')
+
+
+    @api.multi
+    def unlink(self):
+        for line in self:
+            if line.journal_entry_ids.ids:
+                raise UserError(_('In order to delete a bank statement line, you must first cancel it to delete related journal items.'))
+        return super(PosCashbackStatementLine, self).unlink()
+
 
     def fast_counterpart_creation(self):
         for st_line in self:
