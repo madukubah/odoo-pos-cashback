@@ -19,6 +19,8 @@
         'views/pos_order.xml',
         'views/pos_session.xml',
         'views/pos_cashback_statement.xml',
+        'security/ir.model.access.csv',
+
     ],
     'qweb': [
         'static/src/xml/cashback_templates.xml',
