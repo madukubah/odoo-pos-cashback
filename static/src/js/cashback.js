@@ -93,6 +93,22 @@ models.load_models({
 //     // },
 // });
 
+
+// var _super_orderline = models.Orderline.prototype;
+// models.Orderline = models.Orderline.extend({
+//     initialize: function(attr,options){
+//         return _super_orderline.initialize.call(this,attr,options);
+//     },
+//     set_unit_price: function(price){
+//         console.log("set_unit_price" + price );
+//         console.log("get_product price " + this.get_product().price );
+//         // console.log("has_cashback " + this.order.has_cashback );
+//         _super_orderline.set_unit_price.call(this, price);
+//         console.log("this.price " + this.price );
+
+//     },
+// })
+
 var _super_order = models.Order.prototype;
 models.Order = models.Order.extend({
     initialize: function(attributes,options) {
@@ -128,6 +144,13 @@ models.Order = models.Order.extend({
     get_cashback_amount: function() {
         var cashback_amount = 0.0;
         var amount = this.get_total_without_tax();
+
+        // if user give a discount then not set the cashback
+        if( this.get_total_discount() > 0 || this.check_price_change() ) 
+            this.has_cashback =false;
+        else if( this.cashback )
+            if( this.cashback.state == "all" ) this.has_cashback = true;
+
         if( this.has_cashback &&  this.cashback )
         {
             if( amount >= this.cashback.minimal_amount )
@@ -136,6 +159,15 @@ models.Order = models.Order.extend({
             }
         }
         return cashback_amount;
+    },
+    check_price_change: function() {
+        var lines = this.get_orderlines();
+        for (var i = 0; i < lines.length; i++) {
+            if (lines[i].get_product().price != lines[i].price ) {
+                return true;
+            }
+        }
+        return false;
     },
 });
 
@@ -150,6 +182,13 @@ screens.PaymentScreenWidget.include({
         var self = this;
 
         this._super();
+        // if user give a discount then not set the cashback
+        // if( self.pos.get_order() ) 
+        //     if( self.pos.get_order().get_total_discount() > 0 ||  self.pos.get_order().check_price_change() ) 
+        //     {
+        //         self.disable_cashback();
+        //     }else
+
         this.set_cashback_button();
 
         this.$('.back').click(function(){
@@ -169,6 +208,7 @@ screens.PaymentScreenWidget.include({
         var self = this;
         this.$('.js_custom_add_cashback').addClass('oe_hidden');
         this.$('.js_custom_remove_cashback').addClass('oe_hidden');
+
         var cashback = this.pos.cashback;
         if( this.pos.cashback )
         {
@@ -178,9 +218,18 @@ screens.PaymentScreenWidget.include({
             }
             else if ( cashback.state == "selected" )
             {
+                
 
                 this.$('.js_custom_add_cashback').removeClass('oe_hidden');
                 this.$('.js_custom_add_cashback').click(function(){
+                    console.log( "js_custom_add_cashback" );
+                    // if user give a discount then not set the cashback
+                    if( self.pos.get_order().get_total_discount() > 0 ||  self.pos.get_order().check_price_change() ) 
+                    {
+                        self.disable_cashback();
+                        return;
+                    }
+
                     self.pos.get_order().has_cashback = true;
                     self.cashback_button_state = 1;
 
@@ -193,6 +242,12 @@ screens.PaymentScreenWidget.include({
 
                 // this.$('.js_custom_remove_cashback').removeClass('oe_hidden');
                 this.$('.js_custom_remove_cashback').click(function(){
+                    // if user give a discount then not set the cashback
+                    if( self.pos.get_order().get_total_discount() > 0 ||  self.pos.get_order().check_price_change() ) 
+                    {
+                        self.disable_cashback();
+                        return;
+                    }
                     self.pos.get_order().has_cashback = false;
                     self.cashback_button_state = 0;
 
@@ -204,6 +259,10 @@ screens.PaymentScreenWidget.include({
                 });
             }
         }
+    },
+    disable_cashback: function() {
+        this.$('.js_custom_add_cashback').addClass('oe_hidden');
+        this.$('.js_custom_remove_cashback').addClass('oe_hidden');
     },
     reset_cashback: function() {
         if( this.pos.cashback )
@@ -219,9 +278,10 @@ screens.PaymentScreenWidget.include({
                 this.pos.get_order().has_cashback = false;
         
                 this.$('.js_custom_remove_cashback').addClass('oe_hidden');
+                // this.$('.js_custom_add_cashback').addClass('oe_hidden');
                 this.$('.js_custom_add_cashback').removeClass('oe_hidden');
 
-                // this.render_paymentlines();
+                // this.set_cashback_button();
             }
         }
     },
@@ -238,10 +298,6 @@ screens.PaymentScreenWidget.include({
         this.$('.cashback-lines').empty();
         if( order != undefined && cashback != undefined )
         {
-            // console.log( "get_total_with_tax "+order.get_total_with_tax() );
-            // console.log( "get_total_without_tax "+order.get_total_without_tax() );
-            // console.log( "get_total_tax "+order.get_total_tax() );
-            // console.log( "get_cashback_amount "+order.get_cashback_amount() );
             if( this.cashback_button_state == 1 )
             {
                 var total_amount = order.get_total_without_tax();
