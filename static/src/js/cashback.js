@@ -193,14 +193,12 @@ screens.PaymentScreenWidget.include({
 
         this.$('.back').click(function(){
             self.reset_cashback();
-            // console.log("back");
         });
 
         this.$('.next').click(function(){
             if (self.order_is_valid()) {
                 self.reset_cashback();
             }
-            // console.log("next");
         });
     },
 
@@ -218,11 +216,8 @@ screens.PaymentScreenWidget.include({
             }
             else if ( cashback.state == "selected" )
             {
-                
-
                 this.$('.js_custom_add_cashback').removeClass('oe_hidden');
                 this.$('.js_custom_add_cashback').click(function(){
-                    console.log( "js_custom_add_cashback" );
                     // if user give a discount then not set the cashback
                     if( self.pos.get_order().get_total_discount() > 0 ||  self.pos.get_order().check_price_change() ) 
                     {
@@ -297,25 +292,26 @@ screens.PaymentScreenWidget.include({
         
         this.$('.cashback-lines').empty();
         if( order != undefined && cashback != undefined )
-        {
-            if( this.cashback_button_state == 1 )
+            if( order.has_cashback )
             {
-                var total_amount = order.get_total_without_tax();
-                var cashback_amount = 0;
-                
-                if( total_amount >= cashback.minimal_amount )
+                if( this.cashback_button_state == 1 )
                 {
-                    cashback_amount = total_amount * cashback.cashback_pc / 100;
+                    var total_amount = order.get_total_without_tax();
+                    var cashback_amount = 0;
+                    
+                    if( total_amount >= cashback.minimal_amount )
+                    {
+                        cashback_amount = total_amount * cashback.cashback_pc / 100;
+                    }
+                    var cashbackWidget = $(QWeb.render('PaymentScreen-PaymentCashback2', { 
+                        widget:this ,
+                        cashback: cashback_amount ,
+                        name: cashback.name ,
+                    }));
+                    this.cashback_amount = cashback_amount;
+                    cashbackWidget.appendTo(this.$('.paymentlines-container'));
                 }
-                var cashbackWidget = $(QWeb.render('PaymentScreen-PaymentCashback2', { 
-                    widget:this ,
-                    cashback: cashback_amount ,
-                    name: cashback.name ,
-                }));
-                this.cashback_amount = cashback_amount;
-                cashbackWidget.appendTo(this.$('.paymentlines-container'));
             }
-        }
     },
 
 });
